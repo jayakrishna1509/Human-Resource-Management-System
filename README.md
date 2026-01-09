@@ -63,7 +63,6 @@ hrms-assignment/
 │   └── hrms.db          # SQLite database file
 ├── logs/                # Application logs
 │   ├── hrms.log         # Main log file
-│   ├── hrms.log.1       # Rotated log files
 │   └── hrms.log.5
 ├── static/               # Static files
 │   ├── css/
