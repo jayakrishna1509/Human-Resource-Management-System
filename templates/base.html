@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Human Resource Management System for employee management, attendance tracking, and reporting">
+    <meta name="keywords" content="HRMS, HR, Employee Management, Attendance, Reports">
+    <meta name="author" content="HRMS Development Team">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>HRMS</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/hr.png') }}">
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    
+    <!-- DNS prefetch for performance -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    
+    <!-- Font Awesome for vector icons - Multiple sources for reliability -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.1/css/all.css" />
+    
+    <!-- Fallback inline styles -->
+    <style>
+        .fa, .fas, .far, .fab {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+        }
+        
+        .fa-users-cog:before { content: "\f509"; }
+        .fa-home:before { content: "\f015"; }
+        .fa-chart-bar:before { content: "\f080"; }
+        .fa-user:before { content: "\f007"; }
+        .fa-envelope:before { content: "\f0e0"; }
+        .fa-phone:before { content: "\f095"; }
+        .fa-building:before { content: "\f1ad"; }
+        .fa-briefcase:before { content: "\f0b1"; }
+        .fa-calendar-alt:before { content: "\f073"; }
+        .fa-map-marker-alt:before { content: "\f3c5"; }
+        .fa-filter:before { content: "\f0b0"; }
+        .fa-user-plus:before { content: "\f234"; }
+        .fa-clock:before { content: "\f017"; }
+        .fa-eye:before { content: "\f06e"; }
+        .fa-save:before { content: "\f0c7"; }
+        .fa-times:before { content: "\f00d"; }
+        .fa-check:before { content: "\f00c"; }
+        .fa-sign-in-alt:before { content: "\f2f6"; }
+        .fa-sign-out-alt:before { content: "\f2f5"; }
+        .fa-plus:before { content: "\f067"; }
+        .fa-chart-line:before { content: "\f201"; }
+        .fa-calendar-check:before { content: "\f274"; }
+    </style>
+    
+    <!-- Resource hints -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='155.0') }}">
+    <link rel="prefetch" href="{{ url_for('static', filename='js/script.js', v='155.0') }}">
+</head>
+<body>
+    
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h1>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.5rem;">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="#2563eb"/>
+                        </svg>
+                        HRMS
+                    </h1>
+                </div>
+                <ul class="nav-menu" role="menubar">
+                    <li class="nav-item" role="none">
+                        <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}" role="menuitem" aria-current="{% if request.endpoint == 'home' %}page{% endif %}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.5rem;">
+                                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#6b7280"/>
+                            </svg>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item" role="none">
+                        <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}" role="menuitem" aria-current="{% if request.endpoint == 'reports' %}page{% endif %}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 0.5rem;">
+                                <path d="M3 13h2v8H3zm4-8h2v16H7zm4-2h2v18h-2zm4 4h2v14h-2zm4-2h2v16h-2z" fill="#6b7280"/>
+                            </svg>
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+                <div class="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="alert-container">
+                        {% for message in messages %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; HRMS - Human Resource Management System. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

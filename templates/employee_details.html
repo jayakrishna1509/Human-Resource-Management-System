@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}{{ employee.name }} - Employee Details{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user"></i> Employee Details</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Employees
+        </a>
+        <button class="btn btn-primary" onclick="showMarkAttendanceModal('{{ employee.id }}')">
+            <i class="fas fa-clock"></i> Mark Attendance
+        </button>
+    </div>
+</div>
+
+<div class="employee-details-container">
+    <div class="employee-info-card">
+        <div class="card-header">
+            <h3><i class="fas fa-id-card"></i> Personal Information</h3>
+        </div>
+        <div class="card-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Employee ID:</span>
+                    <span class="info-value">{{ employee.id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Full Name:</span>
+                    <span class="info-value">{{ employee.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ employee.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">{{ employee.phone or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Department:</span>
+                    <span class="info-value">{{ employee.department or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Designation:</span>
+                    <span class="info-value">{{ employee.designation or '-' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Joining:</span>
+                    <span class="info-value">{{ employee.date_of_joining.strftime('%d-%m-%Y') if employee.date_of_joining else '-' }}</span>
+                </div>
+                <div class="info-item full-width">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value">{{ employee.address or '-' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="attendance-card">
+        <div class="card-header">
+            <h3><i class="fas fa-calendar-check"></i> Attendance Records</h3>
+            <div class="attendance-summary">
+                <span class="summary-item">
+                    <i class="fas fa-calendar-alt"></i> Total Records: {{ attendance_records|length }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if attendance_records %}
+            <div class="table-container">
+                <table class="attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Working Hours</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr>
+                            <td>{{ record.date.strftime('%d-%m-%Y') }}</td>
+                            <td>{{ record.in_time.strftime('%I:%M %p') if record.in_time else '-' }}</td>
+                            <td>{{ record.out_time.strftime('%I:%M %p') if record.out_time else '-' }}</td>
+                            <td>
+                                {% if record.working_hours %}
+                                    {{ "%.2f"|format(record.working_hours) }} hours
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editAttendance(this)" 
+                                        data-record-id="{{ record.id }}" 
+                                        data-date="{{ record.date.strftime('%Y-%m-%d') }}" 
+                                        data-in-time="{{ record.in_time.strftime('%H:%M') if record.in_time else '' }}" 
+                                        data-out-time="{{ record.out_time.strftime('%H:%M') if record.out_time else '' }}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-attendance">
+                <i class="fas fa-calendar-times"></i>
+                <p>No attendance records found for this employee.</p>
+                <button class="btn btn-primary" onclick="showMarkAttendanceModal('{{ employee.id }}')">
+                    Mark First Attendance
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Mark Attendance Modal -->
+<div id="mark-attendance-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-clock"></i> Mark Attendance</h3>
+            <span class="close" onclick="closeModal('mark-attendance-modal')">&times;</span>
+        </div>
+        <form id="mark-attendance-form" class="form">
+            <input type="hidden" id="attendance-employee-id" name="employee_id" value="{{ employee.id }}">
+            <div class="form-group">
+                <label for="attendance-date">Date *</label>
+                <input type="date" id="attendance-date" name="date" required class="form-control">
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="in-time">In Time</label>
+                    <input type="time" id="in-time" name="in_time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="out-time">Out Time</label>
+                    <input type="time" id="out-time" name="out_time" class="form-control">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('mark-attendance-modal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Mark Attendance</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Attendance Modal -->
+<div id="edit-attendance-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Attendance</h3>
+            <span class="close" onclick="closeModal('edit-attendance-modal')">&times;</span>
+        </div>
+        <form id="edit-attendance-form" class="form">
+            <input type="hidden" id="edit-attendance-id" name="attendance_id">
+            <input type="hidden" id="edit-record-id" name="record_id">
+            <div class="form-group">
+                <label for="edit-attendance-date">Date *</label>
+                <input type="date" id="edit-attendance-date" name="date" required class="form-control">
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="edit-in-time">In Time</label>
+                    <input type="time" id="edit-in-time" name="in_time" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-out-time">Out Time</label>
+                    <input type="time" id="edit-out-time" name="out_time" class="form-control">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('edit-attendance-modal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Attendance</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set today's date as default for attendance
+const today = new Date();
+const dateStr = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+document.getElementById('attendance-date').value = dateStr;
+
+// Mark attendance form submission
+document.getElementById('mark-attendance-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Get form data directly
+    const employeeId = document.getElementById('attendance-employee-id').value;
+    const date = document.getElementById('attendance-date').value;
+    const inTime = document.getElementById('in-time').value;
+    const outTime = document.getElementById('out-time').value;
+    
+    console.log('Form values:', { employeeId, date, inTime, outTime }); // Debug log
+    
+    // Validate required fields
+    if (!date) {
+        showNotification('Date is required', 'error');
+        return;
+    }
+    
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+        showNotification('Invalid date format. Use YYYY-MM-DD', 'error');
+        return;
+    }
+    
+    // Format time to HH:MM (remove seconds if present)
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '';
+        // Keep HH:MM format (API expects HH:MM)
+        return timeStr.substring(0, 5);
+    };
+    
+    const data = {
+        date: date,
+        in_time: formatTime(inTime),
+        out_time: formatTime(outTime)
+    };
+    
+    console.log('Sending data:', data); // Debug log
+    
+    try {
+        const response = await fetch(`/api/attendance/${employeeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('Attendance marked successfully!', 'success');
+            closeModal('mark-attendance-modal');
+            location.reload();
+        } else {
+            showNotification(result.error || 'Failed to mark attendance', 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+});
+
+function showMarkAttendanceModal(employeeId) {
+    document.getElementById('attendance-employee-id').value = employeeId;
+    document.getElementById('mark-attendance-modal').style.display = 'block';
+}
+
+function editAttendance(button) {
+    console.log('Edit button clicked:', button); // Debug log
+    console.log('Button dataset:', button.dataset); // Debug log
+    
+    const recordId = button.dataset.recordId;
+    const date = button.dataset.date;
+    const inTime = button.dataset.inTime;
+    const outTime = button.dataset.outTime;
+    
+    console.log('Extracted data:', { recordId, date, inTime, outTime }); // Debug log
+    
+    // Set form values for editing with null checks
+    const editDateInput = document.getElementById('edit-attendance-date');
+    const editRecordIdInput = document.getElementById('edit-record-id');
+    const editInTimeInput = document.getElementById('edit-in-time');
+    const editOutTimeInput = document.getElementById('edit-out-time');
+    
+    if (editDateInput && editRecordIdInput && editInTimeInput && editOutTimeInput) {
+        console.log('All elements found, setting values'); // Debug log
+        editDateInput.value = date;
+        editRecordIdInput.value = recordId;
+        editInTimeInput.value = inTime;
+        editOutTimeInput.value = outTime;
+        document.getElementById('edit-attendance-modal').style.display = 'block';
+    } else {
+        console.log('Edit form elements not found:', { 
+            editDateInput, editRecordIdInput, editInTimeInput, editOutTimeInput 
+        }); // Debug log
+        showNotification('Error: Edit form not found', 'error');
+    }
+}
+
+// Edit attendance form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const editForm = document.getElementById('edit-attendance-form');
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const recordId = document.getElementById('edit-record-id').value;
+            const date = document.getElementById('edit-attendance-date').value;
+            const inTime = document.getElementById('edit-in-time').value;
+            const outTime = document.getElementById('edit-out-time').value;
+            
+            // Validate required fields
+            if (!date) {
+                showNotification('Date is required', 'error');
+                return;
+            }
+            
+            // Validate date format (YYYY-MM-DD)
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(date)) {
+                showNotification('Invalid date format. Use YYYY-MM-DD', 'error');
+                return;
+            }
+            
+            // Format time to HH:MM (remove seconds if present)
+            const formatTime = (timeStr) => {
+                if (!timeStr) return '';
+                // Keep HH:MM format (API expects HH:MM)
+                return timeStr.substring(0, 5);
+            };
+            
+            const data = {
+                record_id: recordId,
+                date: date,
+                in_time: formatTime(inTime),
+                out_time: formatTime(outTime)
+            };
+            
+            console.log('Updating attendance:', data); // Debug log
+            
+            try {
+                const response = await fetch(`/api/attendance/${data.record_id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Attendance updated successfully!', 'success');
+                    closeModal('edit-attendance-modal');
+                    location.reload();
+                } else {
+                    showNotification(result.error || 'Failed to update attendance', 'error');
+                }
+            } catch (error) {
+                showNotification('Error: ' + error.message, 'error');
+            }
+        });
+    }
+});
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type}`;
+    notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+    
+    const container = document.querySelector('.alert-container') || document.querySelector('.container');
+    container.insertBefore(notification, container.firstChild);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

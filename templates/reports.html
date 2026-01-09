@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - HRMS{% endblock %}
+
+{% block content %}
+<div class="page-header" data-departments='{{ department_counts|tojson|safe }}'>
+    <h1><i class="fas fa-chart-bar"></i> Department Reports</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<div class="reports-container">
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="card-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="card-content">
+                <h3>Total Employees</h3>
+                <p class="card-value">{{ total_employees }}</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="card-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="card-content">
+                <h3>Total Departments</h3>
+                <p class="card-value">{{ department_counts|length }}</p>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="card-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="card-content">
+                <h3>Avg. per Department</h3>
+                <p class="card-value">{{ "%.1f"|format(total_employees / department_counts|length if department_counts else 0) }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-grid">
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-pie"></i> Department Distribution</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="card-header">
+                <h3><i class="fas fa-table"></i> Department Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="department-table">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Employee Count</th>
+                                <th>Percentage</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in department_counts %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-building"></i>
+                                    {{ dept.department or 'Unassigned' }}
+                                </td>
+                                <td>
+                                    <span class="count-badge">{{ dept.count }}</span>
+                                </td>
+                                <td>
+                                    <div class="percentage-bar">
+                                        {% set percentage = (dept.count / total_employees * 100)|round(1) %}
+                                        <div class="percentage-fill" data-width="{{ percentage }}%"></div>
+                                        <span class="percentage-text">{{ "%.1f"|format(percentage) }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if dept.count >= 10 %}
+                                        <span class="status-badge status-high">Large</span>
+                                    {% elif dept.count >= 5 %}
+                                        <span class="status-badge status-medium">Medium</span>
+                                    {% else %}
+                                        <span class="status-badge status-low">Small</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="no-data">No department data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="additional-stats">
+        <div class="stats-card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle"></i> Insights</h3>
+            </div>
+            <div class="card-body">
+                <div class="insights-grid">
+                    {% if department_counts %}
+                        {% set largest_dept = department_counts|sort(attribute='count')|last %}
+                        <div class="insight-item">
+                            <i class="fas fa-trophy"></i>
+                            <div>
+                                <strong>Largest Department:</strong>
+                                <span>{{ largest_dept.department }} ({{ largest_dept.count }} Employees)</span>
+                            </div>
+                        </div>
+                        
+                        {% set smallest_dept = department_counts|sort(attribute='count')|first %}
+                        <div class="insight-item">
+                            <i class="fas fa-users"></i>
+                            <div>
+                                <strong>Smallest Department:</strong>
+                                <span>{{ smallest_dept.department }} ({{ smallest_dept.count }} Employees)</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="insight-item">
+                        <i class="fas fa-percentage"></i>
+                        <div>
+                            <strong>Department Coverage:</strong>
+                            <span>{{ "%.1f"|format((department_counts|length / 10) * 100) }}% of Standard Departments</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Set width for percentage fills using data attributes
+document.addEventListener('DOMContentLoaded', function() {
+    const percentageFills = document.querySelectorAll('.percentage-fill');
+    percentageFills.forEach(function(element) {
+        const width = element.getAttribute('data-width');
+        if (width) {
+            element.style.width = width;
+        }
+    });
+    
+    // Get department data from data attribute
+    const pageHeader = document.querySelector('.page-header');
+    const rawData = pageHeader.getAttribute('data-departments');
+    let departmentData = [];
+    
+    if (rawData) {
+        try {
+            departmentData = JSON.parse(rawData);
+        } catch (e) {
+            console.error('Error parsing department data:', e);
+        }
+    }
+    
+    // Initialize department distribution chart
+    const ctx = document.getElementById('departmentChart').getContext('2d');
+    
+    if (departmentData && departmentData.length > 0) {
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: departmentData.map(dept => dept.department),
+                datasets: [{
+                    data: departmentData.map(dept => dept.count),
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF',
+                        '#FF9F40',
+                        '#FF6384',
+                        '#C9CBCF',
+                        '#4BC0C0',
+                        '#FF6384'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    console.log('Reports page loaded - percentage bars and chart initialized');
+});
+</script>
+{% endblock %}

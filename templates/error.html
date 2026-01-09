@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Error - HRMS{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <div class="error-header">
+            <h1><i class="fas fa-exclamation-triangle"></i> Oops! Something went wrong</h1>
+        </div>
+        <div class="error-body">
+            <div class="error-icon">
+                <i class="fas fa-bug"></i>
+            </div>
+            <div class="error-message">
+                <h2>We encountered an unexpected error</h2>
+                <p>{{ error or 'An unexpected error occurred. Please try again later.' }}</p>
+            </div>
+        </div>
+        <div class="error-actions">
+            <a href="{{ url_for('home') }}" class="btn btn-primary">
+                <i class="fas fa-home"></i> Go Back Home
+            </a>
+            <button onclick="history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Go Back
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="error-details">
+    <details>
+        <summary>Technical Details</summary>
+        <div class="tech-info">
+            <p><strong>Error ID:</strong> {{ request_id or 'N/A' }}</p>
+            <p><strong>Time:</strong> {{ moment().format('YYYY-MM-DD HH:mm:ss') }}</p>
+            <p><strong>User Agent:</strong> {{ request.user_agent|string() }}</p>
+        </div>
+    </details>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh after 30 seconds for temporary errors
+setTimeout(() => {
+    if (confirm('The page seems to have an error. Would you like to refresh?')) {
+        window.location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

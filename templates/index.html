@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Home - HRMS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="fa-solid fa-user" style="color: #2563eb; font-size: 2rem; margin-right: 0.75rem;"></i>
+        Human Resource Management System
+    </h1>
+    <p>Welcome to HR Management System. Manage Employees, Track Attendance, and Generate Comprehensive Reports.</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-plus"></i> Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <button class="btn btn-primary" onclick="showAddEmployeeModal()" aria-label="Add new employee">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add New Employee
+            </button>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-line"></i> Statistics</h3>
+        </div>
+        <div class="card-body">
+            <div class="stat-item">
+                <span class="stat-label">Total Employees:</span>
+                <span class="stat-value">{{ employees|length }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Active Today:</span>
+                <span class="stat-value" id="active-today">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="employee-section">
+    <div class="section-header">
+        <h2><i class="fas fa-users"></i> Employee List</h2>
+        <div class="search-box">
+            <input type="text" id="employee-search" placeholder="Search employees by name, email, department" class="search-input">
+            <button class="btn btn-search" onclick="searchEmployees()" title="Search employees">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="employee-table" id="employee-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Date of Joining</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr class="employee-row" data-employee-id="{{ employee.id }}">
+                    <td data-label="ID">{{ employee.id }}</td>
+                    <td data-label="Name">{{ employee.name }}</td>
+                    <td data-label="Email">{{ employee.email }}</td>
+                    <td data-label="Department">{{ employee.department or '-' }}</td>
+                    <td data-label="Designation">{{ employee.designation or '-' }}</td>
+                    <td data-label="Date of Joining">{{ employee.date_of_joining.strftime('%d-%m-%Y') if employee.date_of_joining else '-' }}</td>
+                    <td data-label="Actions">
+                        <button class="btn btn-sm btn-info" onclick="viewEmployeeDetails('{{ employee.id }}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteEmployee('{{ employee.id }}', '{{ employee.name }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="no-data">No employees found. Add your first employee to get started!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Employee Modal -->
+<div id="add-employee-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Add New Employee</h3>
+            <span class="close" onclick="closeModal('add-employee-modal')" title="Close modal">&times;</span>
+        </div>
+        <form id="add-employee-form" class="form" novalidate>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="name"><i class="fas fa-user"></i> Full Name *</label>
+                    <input type="text" id="name" name="name" required class="form-control" minlength="2" maxlength="100" pattern="[A-Za-z\s]+" title="Name should only contain letters and spaces" autocomplete="name" placeholder="Enter Employee Full Name">
+                    <span class="error-message" id="name-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email *</label>
+                    <input type="email" id="email" name="email" required class="form-control" maxlength="120" title="Please enter a valid email address" autocomplete="email" placeholder="employee@company.com">
+                    <span class="error-message" id="email-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="phone"><i class="fas fa-phone"></i> Phone</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" maxlength="20" pattern="[\d\s\-\+\(\)]+" title="Phone number can only contain digits, spaces, and +()-" autocomplete="tel" placeholder="+91 1234567890">
+                    <span class="error-message" id="phone-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="department"><i class="fas fa-building"></i> Department</label>
+                    <select id="department" name="department" class="form-control" autocomplete="organization">
+                        <option value="">Select Department</option>
+                        <option value="IT">Information Technology</option>
+                        <option value="HR">Human Resources</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Operations">Operations</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="designation"><i class="fas fa-briefcase"></i> Designation</label>
+                    <input type="text" id="designation" name="designation" class="form-control" maxlength="100" title="Job title or position" placeholder="e.g., Senior Developer">
+                </div>
+                <div class="form-group">
+                    <label for="date_of_joining"><i class="fas fa-calendar-alt"></i> Date of Joining</label>
+                    <input type="date" id="date_of_joining" name="date_of_joining" class="form-control" max="" title="Date cannot be in the future">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="address"><i class="fas fa-map-marker-alt"></i> Address</label>
+                <textarea id="address" name="address" rows="3" class="form-control" maxlength="500" title="Residential address" placeholder="Enter Complete Address"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('add-employee-modal')" title="Cancel and close">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" title="Add new employee to system">
+                    <i class="fas fa-save"></i> Add Employee
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Mark Attendance Modal -->
+<div id="mark-attendance-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-clock"></i> Mark Attendance</h3>
+            <span class="close" onclick="closeModal('mark-attendance-modal')" title="Close modal">&times;</span>
+        </div>
+        <form id="mark-attendance-form" class="form">
+            <input type="hidden" id="attendance-employee-id" name="employee_id">
+            <div class="form-group">
+                <label for="attendance-date"><i class="fas fa-calendar-alt"></i> Date *</label>
+                <input type="date" id="attendance-date" name="date" required class="form-control">
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="in-time"><i class="fas fa-sign-in-alt"></i> In Time</label>
+                    <input type="time" id="in-time" name="in_time" class="form-control" placeholder="09:00 AM">
+                </div>
+                <div class="form-group">
+                    <label for="out-time"><i class="fas fa-sign-out-alt"></i> Out Time</label>
+                    <input type="time" id="out-time" name="out_time" class="form-control" placeholder="06:00 PM">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('mark-attendance-modal')" title="Cancel and close">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary" title="Mark attendance for employee">
+                    Mark Attendance
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+// Set today's date as default for attendance
+document.getElementById('attendance-date').valueAsDate = new Date();
+
+// Client-side form validation
+function validateEmployeeForm() {
+    var form = document.getElementById('add-employee-form');
+    var name = document.getElementById('name');
+    var email = document.getElementById('email');
+    var phone = document.getElementById('phone');
+    var isValid = true;
+    
+    // Clear previous errors
+    var errorMessages = document.querySelectorAll('.error-message');
+    for (var i = 0; i < errorMessages.length; i++) {
+        errorMessages[i].style.display = 'none';
+    }
+    var formControls = document.querySelectorAll('.form-control');
+    for (var i = 0; i < formControls.length; i++) {
+        formControls[i].classList.remove('error');
+    }
+    
+    // Validate name
+    if (!name.value.trim() || name.value.trim().length < 2) {
+        showError('name-error', 'Name must be at least 2 characters long');
+        name.classList.add('error');
+        isValid = false;
+    } else if (!/^[A-Za-z\s]+$/.test(name.value.trim())) {
+        showError('name-error', 'Name should only contain letters and spaces');
+        name.classList.add('error');
+        isValid = false;
+    }
+    
+    // Validate email
+    var emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email.value.trim()) {
+        showError('email-error', 'Email is required');
+        email.classList.add('error');
+        isValid = false;
+    } else if (!emailPattern.test(email.value.trim())) {
+        showError('email-error', 'Please enter a valid email address');
+        email.classList.add('error');
+        isValid = false;
+    }
+    
+    // Validate phone
+    if (phone.value.trim() && !/^[\d\s\-\+\(\)]+$/.test(phone.value.trim())) {
+        showError('phone-error', 'Phone number can only contain digits, spaces, and +()-');
+        phone.classList.add('error');
+        isValid = false;
+    }
+    
+    return isValid;
+}
+
+function showError(elementId, message) {
+    var errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
+// Add employee form submission
+document.getElementById('add-employee-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!validateEmployeeForm()) {
+        return;
+    }
+    
+    var formData = new FormData(this);
+    var data = {};
+    var entries = formData.entries();
+    var entry = entries.next();
+    while (!entry.done) {
+        data[entry.value[0]] = entry.value[1];
+        entry = entries.next();
+    }
+    
+    // Debug: Log the data being sent
+    console.log('Sending data:', data);
+    
+    fetch('/api/add-employee-simple', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(function(response) {
+        console.log('Response status:', response.status);
+        return response.text().then(function(text) {
+            console.log('Raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.log('JSON parse error:', e);
+                return {error: 'Invalid response: ' + text};
+            }
+        });
+    })
+    .then(function(result) {
+        console.log('Parsed result:', result);
+        if (result.message) {
+            showNotification('Employee added successfully!', 'success');
+            closeModal('add-employee-modal');
+            location.reload();
+        } else {
+            showNotification(result.error || 'Failed to add employee', 'error');
+        }
+    })
+    .catch(function(error) {
+        showNotification('Error: ' + error.message, 'error');
+    });
+});
+
+// Mark attendance form submission
+document.getElementById('mark-attendance-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    var formData = new FormData(this);
+    var data = {};
+    var entries = formData.entries();
+    var entry = entries.next();
+    while (!entry.done) {
+        data[entry.value[0]] = entry.value[1];
+        entry = entries.next();
+    }
+    var employeeId = data.employee_id;
+    delete data.employee_id;
+    
+    console.log('Attendance data:', data);
+    
+    fetch('/api/attendance/' + employeeId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(function(response) {
+        console.log('Attendance response status:', response.status);
+        return response.text().then(function(text) {
+            console.log('Attendance raw response:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.log('Attendance JSON parse error:', e);
+                return {error: 'Invalid response: ' + text};
+            }
+        });
+    })
+    .then(function(result) {
+        console.log('Attendance parsed result:', result);
+        if (result.message) {
+            showNotification('Attendance marked successfully!', 'success');
+            closeModal('mark-attendance-modal');
+        } else {
+            showNotification(result.error || 'Failed to mark attendance', 'error');
+        }
+    })
+    .catch(function(error) {
+        showNotification('Error: ' + error.message, 'error');
+    });
+});
+
+// Search employees
+function searchEmployees() {
+    var searchTerm = document.getElementById('employee-search').value.toLowerCase();
+    var rows = document.querySelectorAll('.employee-row');
+    
+    for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(searchTerm) ? '' : 'none';
+    }
+}
+
+// Modal functions
+function showAddEmployeeModal() {
+    document.getElementById('add-employee-modal').style.display = 'block';
+}
+
+function showMarkAttendanceModal(employeeId = null) {
+    if (employeeId) {
+        document.getElementById('attendance-employee-id').value = employeeId;
+    }
+    document.getElementById('mark-attendance-modal').style.display = 'block';
+}
+
+function viewEmployeeDetails(employeeId) {
+    window.location.href = '/employee/' + parseInt(employeeId);
+}
+
+function deleteEmployee(employeeId, employeeName) {
+    if (confirm('Are You Sure You Want to Delete ' + employeeName + '?')) {
+        fetch('/api/delete-employee/' + employeeId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(function(response) {
+            console.log('Delete response status:', response.status);
+            return response.text().then(function(text) {
+                console.log('Delete raw response:', text);
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.log('Delete JSON parse error:', e);
+                    return {error: 'Invalid response: ' + text};
+                }
+            });
+        })
+        .then(function(result) {
+            console.log('Delete parsed result:', result);
+            if (result.message) {
+                showNotification('Employee deleted successfully!', 'success');
+                location.reload();
+            } else {
+                showNotification(result.error || 'Failed to delete employee', 'error');
+            }
+        })
+        .catch(function(error) {
+            showNotification('Error: ' + error.message, 'error');
+        });
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Notification function
+function showNotification(message, type) {
+    var notification = document.createElement('div');
+    notification.className = 'alert alert-' + type;
+    notification.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + message;
+    
+    var container = document.querySelector('.alert-container') || document.querySelector('.container');
+    container.insertBefore(notification, container.firstChild);
+    
+    setTimeout(function() {
+        notification.remove();
+    }, 5000);
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
